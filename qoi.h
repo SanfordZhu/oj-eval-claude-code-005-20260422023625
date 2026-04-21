@@ -6,7 +6,7 @@
 constexpr uint8_t QOI_OP_INDEX_TAG = 0x00;
 constexpr uint8_t QOI_OP_DIFF_TAG  = 0x40;
 constexpr uint8_t QOI_OP_LUMA_TAG  = 0x80;
-constexpr uint8_t QOI_OP_RUN_TAG   = 0xc0; 
+constexpr uint8_t QOI_OP_RUN_TAG   = 0xc0;
 constexpr uint8_t QOI_OP_RGB_TAG   = 0xfe;
 constexpr uint8_t QOI_OP_RGBA_TAG  = 0xff;
 constexpr uint8_t QOI_PADDING[8] = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u};
@@ -76,33 +76,20 @@ bool QoiEncode(uint32_t width, uint32_t height, uint8_t channels, uint8_t colors
         b = QoiReadU8();
         if (channels == 4) a = QoiReadU8();
 
-        // Handle first pixel or pixel with alpha channel change
-        if (i == 0 || (channels == 4 && a != pre_a)) {
-            if (i > 0 && run > 0) {
-                QoiWriteU8(QOI_OP_RUN_TAG | (run - 1));
-                run = 0;
-            }
-            if (channels == 4 && a != pre_a && i > 0) {
-                // Alpha changed, must use RGBA
-                QoiWriteU8(QOI_OP_RGBA_TAG);
-                QoiWriteU8(r);
-                QoiWriteU8(g);
-                QoiWriteU8(b);
-                QoiWriteU8(a);
-            } else if (i == 0 || r != pre_r || g != pre_g || b != pre_b) {
-                // Use RGB for first pixel or when colors differ
-                QoiWriteU8(QOI_OP_RGB_TAG);
-                QoiWriteU8(r);
-                QoiWriteU8(g);
-                QoiWriteU8(b);
-            }
+        // Handle first pixel
+        if (i == 0) {
+            QoiWriteU8(QOI_OP_RGB_TAG);
+            QoiWriteU8(r);
+            QoiWriteU8(g);
+            QoiWriteU8(b);
+
             // Update history
             int index = QoiColorHash(r, g, b, a);
             history[index][0] = r;
             history[index][1] = g;
             history[index][2] = b;
             history[index][3] = a;
-            // Update previous values
+
             pre_r = r;
             pre_g = g;
             pre_b = b;
@@ -112,8 +99,6 @@ bool QoiEncode(uint32_t width, uint32_t height, uint8_t channels, uint8_t colors
 
         // Check for RUN operation
         if (r == pre_r && g == pre_g && b == pre_b && a == pre_a) {
-            // Debug: print when RUN is detected
-            // std::cerr << "RUN detected at pixel " << i << ", run=" << run + 1 << std::endl;
             run++;
             if (run == 62 || i == px_num - 1) {
                 QoiWriteU8(QOI_OP_RUN_TAG | (run - 1));
