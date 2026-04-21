@@ -22,7 +22,7 @@ constexpr uint8_t QOI_MASK_2 = 0xc0;
  *
  * @return bool true if it is a valid qoi format image, false otherwise
  */
-bool QoiEncode(uint32_t width, uint32_t height, uint8_t channels, uint8_t colorspace = 0);
+bool QoiEncode(uint32_t width, uint32_t height, uint8_t channels, uint8_t colorspace);
 
 /**
  * @brief decode the qoi format of an image to raw pixel data
